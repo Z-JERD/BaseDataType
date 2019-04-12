@@ -31,6 +31,38 @@ Set推导式：
 
 """
 
+将li 转换成
+    {
+        '北京市': [
+                    {'name': '北京市', 'area': '东城区'}, 
+                    {'name': '北京市', 'area': '西城区'}, 
+                    {'name': '北京市', 'area': '朝阳区'}, 
+                    {'name': '北京市', 'area': '海淀区'}
+                ], 
+        '上海市': [
+                    {'name': '上海市', 'area': '浦东新区'}, 
+                    {'name': '上海市', 'area': '普陀区'}
+                ]
+    }
+
+
+data = {}
+li = [
+    {"name": "北京市", "area": "东城区"},
+    {"name": "北京市", "area": "西城区"},
+    {"name": "北京市", "area": "朝阳区"},
+    {"name": "北京市", "area": "海淀区"},
+    {"name": "上海市", "area": "浦东新区"},
+    {"name": "上海市", "area": "普陀区"},
+]
+
+for bo in li:
+    mbo = data.pop(bo['name'], [])
+    mbo.append(bo)
+    data[bo['name']] = mbo
+    
+    
+
 #将list3中的内容以list4中的内容显示出来
 list3 = [
     {"name": "北京市", "area": "东城区"},
