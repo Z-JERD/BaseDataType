@@ -215,33 +215,186 @@ obj._walk()           # walking test
         Go in here, execute __init__
         Go in here, execute __str__
         jerd
-    
+
+4.__del__
+    当删除一个对象时，Python解释器也会默认调用一个方法，这个方法为__del__()方法
+    不管是手动调用del还是由Python自动回收都会触发__del__方法执行
+
+    当使用del删除变量指向的对象时，如果对象的引用计数不会1，比如3，那么此时只会让这个引用计数减1，即变为2，
+    当再次调用del时，变为1，如果再调用1次del，此时会真的把对象进行删除
+
+    del xxx 不会主动调用__del__方法，只有引用计数 == 0时，__del__()才会被执行，并且定义了__del_()的实例无法
+    被Python的循环垃圾收集器收集，所以尽量不要自定义__del__()。一般情况下，__del__() 不会破坏垃圾处理器。
+
+    class Demo(object):
+
+        def __init__(self, name, pwd):
+            print("Go in here, execute __init__")
+            self.name = name
+            self.__pwd = pwd
+
+        def __del__(self):
+            print('The python interpreter begins to recycle objects: %s'%self.name)
+
+    #1.Python解释器释放实例对象的时候，调用该对象的__del__方法
+        obj = Demo("jerd", "jerd@1346677")
+        print('----------')
+
+        result:
+            Go in here, execute __init__
+            ----------
+            The python interpreter begins to recycle objects: jerd
+    # 2.当使用del 把内存的所有应用删除，立刻调用__del__方法
+        obj = Demo("jerd", "jerd@1346677")
+        obj_1 = obj
+
+        del obj
+        del obj_1
+        print('-----------------------')
+
+        result:
+             把内存中所有的引用都删除了 才执行__del__
+            Go in here, execute __init__
+            The python interpreter begins to recycle objects: jerd
+            -----------------------
+
+    # 3.
+        obj = Demo("jerd", "jerd@1346677")
+        obj_1 = obj
+
+        del obj
+        print("=====")
+        del obj_1
+        print('-----------------------')
+
+        result:
+            Go in here, execute __init__
+            =====
+            The python interpreter begins to recycle objects: jerd
+            -----------------------
+    # 4.
+        obj = Demo("jerd", "jerd@1346677")
+        obj_1 = Demo("zhao", "zhao@1346677")
+        del obj
+        print("=====")
+        del obj_1
+        print('-----------------------')
+
+        result:
+            Go in here, execute __init__
+            Go in here, execute __init__
+            The python interpreter begins to recycle objects: jerd
+            =====
+            The python interpreter begins to recycle objects: zhao
+
+    #5.
+        class Animal(object):
+
+            def __init__(self, name):
+                print('__init__方法被调用')
+                self.__name = name
+            # 析构方法
+            # 当对象被删除时，会自动被调用
+            def __del__(self):
+                print("__del__方法被调用")
+                print("%s对象马上被干掉了..."%self.__name)
+        # 创建对象
+        dog = Animal("金毛")
+        # 删除对象
+        del dog
+        cat = Animal("波斯猫")
+        cat2 = cat
+        cat3 = cat
+        print("---马上 删除cat对象")
+        del cat
+        print("---马上 删除cat2对象")
+        del cat2
+        print("---马上 删除cat3对象")
+        del cat3
+        print("=============")
+
+    result:
+            __init__方法被调用
+            __del__方法被调用
+            金毛对象马上被干掉了...
+            __init__方法被调用
+            ---马上 删除cat对象
+            ---马上 删除cat2对象
+            ---马上 删除cat3对象
+            __del__方法被调用
+            波斯猫对象马上被干掉了...
+            =============
+
+5.__getattr__ __setasttr__  __getitem__ __setitem__
+
+    __getattr__ 调用的属性不存在时，会执行getattr
+    __setattr__ 当试图对象的item特性赋值的时候将会被调用
+
+    __item__系列 操作a['name']这种形式 先进行初始化，然后执行__getitem__
+     __getitem__ 调用属性会执行__getitem__
+
+    class Demo():
+
+        def run(self):
+            print("=====")
+
+        def __init__(self,name):
+            print('__init__方法被调用')
+            self.name=name
+
+        def __getattr__(self,item):
+            print('__getattr__方法被调用')
+            return item
+
+
+    # 未定义__getattr__  __getitem__方法
+        obj = Demo("jerd")
+        print(obj.age)     #AttributeError: 'Demo' object has no attribute 'age'
+
+    # 定义__grtattr__方法
+        __init__方法被调用
+        __getattr__方法被调用
+        age
+
+    class Student:
+
+        hobby = "basket"
+        def __init__(self):
+            print('__init__方法被调用')
+            self.sex = "woman"
+        def __getattr__(self, item):
+            print('__getattr__方法被调用')
+            return item + ' is not exits ---'
+
+        def __setattr__(self, key, value):
+            print('__setattr__方法被调用')
+            self.__dict__[key] = value
+
+        def __getitem__(self, item):
+            print('__getitem__方法被调用')
+            return self.__dict__[item]
+
+        def __setitem__(self, key, value):
+            print('__setitem__方法被调用')
+            self.__dict__[key] = value
+    # attr 操作
+        s = Student()
+        print(s.hobby)              # basket
+        print(s.name)               # __getattr__方法被调用 name is not exits ---
+        s.age = 11                  # __setattr__方法被调用
+        print(s.age)                # 11
+
+    # item 操作
+        print(s['age'])            # __getitem__方法被调用 11
+        #print(s['hobby'])         # __getitem__方法被调用  KeyError: 'hobby'
+        print(s['sex'])            # __getitem__方法被调用 woman
+
+        s['age'] = 12              # __setitem__方法被调用
+        print(s['age'])            #__getitem__方法被调用 12
     
     
 """
 
-class Demo(object):
-
-    def __init__(self, name, pwd):
-        print("Go in here, execute __init__")
-        self.name = name
-        self.__pwd = pwd
-
-    def __del__(self):
-        print('The python interpreter begins to recycle objects: %s'%self.name)
-
-
-
-# Python解释器释放实例对象的时候，调用该对象的__del__方法
-# obj = Demo("jerd", "jerd@1346677")
-# print('----------')
-"""
-Go in here, execute __init__
-----------
-The python interpreter begins to recycle objects: jerd
-"""
-
-# 当使用del 把内存的所有应用删除，立刻调用__del__方法
 
 
 
