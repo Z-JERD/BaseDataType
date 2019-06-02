@@ -395,6 +395,257 @@ obj._walk()           # walking test
     
 """
 
+#############################property classmethod staticmethod#########################
+"""
+1.property(属性方法)：           将一个方法伪装成属性。在使用用对象属性的方式调用,只能对象调用
+2.classmethod（类方法):          将一个普通方法装饰为一个类方法.操作只能和类中的静态变量相关
+3.staticmethod（静态方法):       将一个方法装饰成普通函数。在类中装饰一个不需要self参数 也不需要cls参数的函数
+
+class Circle:
+
+    discount = 0.8
+    def __init__(self, r):
+        self.r = r
+
+    @property
+    def area(self):
+        print('-- property --')
+        return self.r ** 2
+
+    @classmethod
+    def change_discount(cls, new_discount):
+        print('-- classmethod --')
+        cls.discount = new_discount
+        cls.r = new_discount * 10
+    @staticmethod
+    def get(a, b, c):
+        print('-- staticmethod --')
+        return a, b, c
+
+
+属性方法：只有实例对象能调用
+    c = Circle(5)
+    print(c.area)                             # -- property --  25
+类方法
+    1.被装饰之后,方法默认接收一个 类 作为参数
+    2.之后所有的操作都只能和类中的静态变量相关 而不应该和对象相关
+    3.类和对象都可以直接调用类方法
+
+    类调用
+        print(Circle.discount)                    # 0.8
+        Circle.change_discount(0.9)               # -- classmethod --
+        print(Circle.discount)                    # 0.9
+    对象调用
+        c = Circle(10)
+        print(c.discount, c.r)                      #0.8 10
+        c.change_discount(0.9)                      # -- classmethod --
+        print(c.discount, c.r)                      # 0.9 10
+        print(Circle.r)                             #9.0
+
+静态方法:类和对象都可以直接调用
+    类调用
+        print(Circle.get(5, 10, 15))                  #-- staticmethod -- (5, 10, 15)
+    对象调用
+        print(Circle(10).get(20,20,20))               #-- staticmethod --  (20, 20, 20)
+
+
+@property 方法来实现 setter 和 getter
+    1.不应该在某属性的 getter 方法里面修改其他属性的值
+    2.如果访问对象的某个属性时，需要表现出特殊的行为，那就用 @property 来定义这种行为
+    3.@property 方法需要执行得迅速一些，缓慢或复杂的工作，应该放在普通的方法里面。
+
+    class Demo(object):
+        def __init__(self,):
+            self.__voltage = 0
+
+        @property
+        def voltage(self):
+            print("-----")
+            return self.__voltage
+
+        @voltage.setter
+        def voltage(self,voltage):
+            print("======")
+            self.__voltage = voltage
+
+    obj = Demo()
+    print(obj.voltage)
+
+    result:
+        -----
+        0
+
+    # 设置 voltage 属性时，将会执行名为 voltage 的 setter 方法
+    obj.voltage = 10
+    print(obj.voltage)
+
+    result:
+        ======
+        -----
+        10
+"""
+
+
+###################################反射：hasattr() getattr() ############################
+"""
+hasattr  判断某一个 变量 是否能够.调用一个名字,返回True或者False
+getattr  直接获取一个变量中的名字的值
+
+
+
+class Goods:
+    discount = 0.8
+    def __init__(self,name,price):
+        self.name = name
+        self.price = price
+    def post(self):
+        return "这是post请求"
+    @property
+    def get(self):
+        return "这是属性方法"
+    @classmethod
+    def change_discount(cls,new_dis):
+        cls.discount = new_dis
+        return "这是类方法"
+    @staticmethod
+    def login(a, b, c):
+        return "这是个静态方法"
+
+# hasattr
+    print(hasattr(Goods, "discount"))       True
+    print(hasattr(Goods, "post"))           True
+    print(hasattr(Goods, "login"))          True
+    print(hasattr(Goods, "show"))           False
+
+值=getattr（类名,字符串类型的属性名） 如果第二个参数是不存在的属性名则会报错
+    getattr(Goods, "discount")           #0.8
+    #getattr(Goods, "show")             #AttributeError: type object 'Goods' has no attribute 'show'
+    getattr(Goods, "show", None)        自定义值，如果不存在就返回默认值 None
+
+
+1.反射类中的名字
+    getattr(类名,'类属性')
+    getattr(类名,'类方法名')()
+    getattr(类名,'静态方法名')()
+    getattr(类名,'对象方法名')(self)
+    
+    1.反射类属性
+        ret=getattr(Goods,"discount")
+        print(ret)                      #   0.8
+    
+    2.反射类方法
+        ret=getattr(Goods,"change_discount")
+        ret = getattr(Goods, "change_discount")
+        print(ret)      # <bound method Goods.change_discount of <class '__main__.Goods'>> 
+        print(ret(10))  # 这是类方法
+        
+    3.反射静态方法   
+        ret=getattr(Goods,"login")
+        print(ret(1,2,3)) #这是个静态方法 
+    
+    4.反射对象方法，参数为类名或者类的对象
+        ret=getattr(Goods,"post")
+        print(ret(Goods))           #这是post请求
+        obj=Goods("jerd",20)
+        print(ret(obj))             #这是post请求
+
+2.反射对象中的名字
+    getattr(对象名,'类属性')
+    getattr(对象名,'对象属性')
+    getattr(对象名,'对象方法名')()
+    getattr(对象名,'属性方法名')
+    getattr(对象名,'类方法名')()
+    getattr(对象名,'静态方法名')()
+    
+    obj=Goods("jerd",20)
+    
+    1.反射类属性
+        ret=getattr(obj,"discount")     #ret=obj.discount
+        print(ret) # 0.8
+    
+    2.反射对象属性
+        ret=getattr(obj,"name")         #ret=obj.name
+        print(ret) #jerd
+    
+    3.反射对象方法
+        ret=getattr(obj,"post")         #ret=obj.post
+        print(ret())                    #这是post请求
+    
+    4.反射属性方法
+         ret=getattr(obj,"get")         #ret=obj.get
+         print(ret)                     #这是属性方法
+    
+    5.反射类方法
+        ret=getattr(obj,"change_discount")  #ret=obj.change_discount
+        print(ret(2))                       #这是类方法
+    
+    6.反射静态方法
+        ret=getattr(obj,"login")                #ret=obj.login
+        print(ret(1,2,3))                       #这是个静态方法
+
+3.模块中反射
+    import 模块名
+    getattr(模块名,'模块中的变量')
+    getattr(模块名,'模块中的函数')()
+    getattr(模块名,'模块中的类名')
+    
+4.反射当前模块中的名字
+    import sys
+    getattr(sys.modules[__name__],'变量')
+    getattr(sys.modules[__name__],'函数')()
+    getattr(sys.modules[__name__],'类名')
+    
+    Demo = getattr(sys.modules[__name__],"Goods")
+    Demo("jerd",20).get()
+"""
+
+######################################__name__ 和 __main__ ##################################
+"""
+使用sys.modules["__main__"]时，如果在另一个文件中导入了当前文件，执行另一个文件会显示另一个文件名的名字
+使用sys.modules[__name__]时， 在另一个文件中会显示当前文件的名字
+
+practice.py
+    import sys
+    count=0
+    sum=100
+    def post():
+        return "这是post请求"
+    class A():
+        def get(self):
+            print("这是practice文件")
+    print(sys.modules["__main__"])
+
+practice1.py
+    
+    import practice
+    import sys
+    count=1
+    class A():
+        def get(self):
+            print("这是practice1文件")
+            
+            
+1.执行practice.py  
+    <module '__main__' from 'E:/lianxi/practice.py'>
+2.执行practice1.py 
+    <module '__main__' from 'E:/lianxi/practice1.py'> 显示当前文件名
+3.将practice.py中print(sys.modules["__main__"])换成print(sys.modules[__name__])
+    执行practice.py  #<module '__main__' from 'E:/lianxi/practice.py'>
+    执行practice1.py #<module 'practice' from 'E:\\lianxi\\practice.py'> #显示导入的文件名
+4.
+    执行practice.py：
+        print(getattr(sys.modules['__main__'],"count")) #0
+        print(getattr(sys.modules[__name__],"count"))  #0
+    执行practice1.py
+        若practice.py中为 print(getattr(sys.modules[__name__],"count")) 则显示1
+        若practice.py中为 print(getattr(sys.modules['__main__'],"count")) 则显示：
+            AttributeError: module '__main__' has no attribute 'count'
+        原因是count定义在了import practice之后，将count定义在import practice前面 结果为1
+
+if __name__ == '__main__': 的作用
+    让你写的脚本模块既可以导入到别的模块中用，另外该模块自己也可执行
+    相当于程序的入口，某个文件被导入时候，如果用了这个if就可以避免没被封装的语句被执行
+"""
 
 
 
