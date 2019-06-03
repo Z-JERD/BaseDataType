@@ -647,6 +647,234 @@ if __name__ == '__main__': 的作用
     相当于程序的入口，某个文件被导入时候，如果用了这个if就可以避免没被封装的语句被执行
 """
 
+#############################Python描述符 (descriptor)#########################
+"""
+属性：__dict__
+作用：字典类型，存放本对象的属性，key(键)即为属性名，value(值)即为属性的值，形式为{attr_key : attr_value}
+
+    对象属性的访问顺序：
+    
+    ①.实例属性
+    
+    ②.类属性
+    
+    ③.父类属性
+    
+    ④.__getattr__()方法
+
+class Goods:
+    discount = 0.8
+    _total = 100
+    __remain = 100
+
+    def __init__(self,name,price,purchase_price):
+        self.name = name
+        self.price = price
+        self.__purchase_price = purchase_price
+    def __account(self):
+        return "这是私有方法 内部访问"
+    def _deal(self):
+        return "这是私有方法 内部/外部访问"
+    def post(self):
+        return "这是post请求"
+    @property
+    def get(self):
+        return "这是属性方法"
+    @classmethod
+    def change_discount(cls,new_dis):
+        cls.discount = new_dis
+        return "这是类方法"
+    @staticmethod
+    def login(a, b, c):
+        return "这是个静态方法"
+        
+当前类有的属性：
+    print(Goods.__dict__)  
+    {
+        '__module__': '__main__',
+        'discount': 0.8,
+        '_total': 100,
+        '_Goods__remain': 100,
+        '__init__': < function Goods.__init__ at 0x00000000021C8A60 > ,
+        '_Goods__account': < function Goods.__account at 0x00000000021C8B70 > ,
+        '_deal': < function Goods._deal at 0x00000000021C8AE8 > ,
+        'post': < function Goods.post at 0x00000000021C8BF8 > ,
+        'get': < property object at 0x0000000000419598 > ,
+        'change_discount': < classmethod object at 0x00000000021C79B0 > ,
+        'login': < staticmethod object at 0x00000000021C79E8 > ,
+        '__dict__': < attribute '__dict__' of 'Goods'objects > ,
+        '__weakref__': < attribute '__weakref__' of 'Goods' objects > ,
+        '__doc__': None
+    }
+    
+实例对象有的属性：
+    obj = Goods("phone", 800, 500)
+    print(obj.__dict__)
+    
+    {
+        'name': 'phone',
+        'price': 800,
+        '_Goods__purchase_price': 500
+    }
+    
+类的属性和实例的属性互补干涉：
+    1.更改实例obj的属性discount，只是新增了该属性，并不影响类Test的属性cls_val
+        obj.discount = 0.7 
+        print(obj.__dict__)
+        
+        {
+            'name': 'phone',
+            'price': 800,
+            '_Goods__purchase_price': 500,
+            'discount': 0.7
+        }
+    
+    
+    2.更改了类Goods的属性discount的值，由于事先增加了实例obj的discount属性，因此不会改变实例的discount值
+        Goods.discount = 0.9
+        print(Goods.__dict__)
+        print(obj.__dict__)
+        
+        {'__module__': '__main__', 'discount': 0.9  .....} 
+        {'name': 'phone', 'price': 800, '_Goods__purchase_price': 500, 'discount': 0.7}
+
+
+描述符：
+    某个类，只要是内部定义了方法 __get__, __set__, __delete__ 中的一个或多个，就可以称为描述符    
+    
+    1.数据描述符:定义的描述符有__get__和__set__2个方法
+        class RevealAccess(object):
+    
+            def __init__(self, initval=None, name='var'):
+                print('__ revealAccess__ init')
+                self.val = initval
+                self.name = name
+        
+        
+            def __get__(self, obj, objtype):
+                print("__get__...")
+                print('name = ', self.name)
+                print('=' * 40, "\n")
+                return self.val
+        
+            def __set__(self, obj, val):
+                print("__set__...")
+                print('name = ', self.name)
+                self.val = val
+                
+        1.# 描述符的对象定义为类属性
+            class MyClass(object):
+                x = RevealAccess(10, 'jerd')
+                y = 5
+            
+            print(MyClass.x)
+            
+            result:
+                __ revealAccess__ init
+                __get__...
+                name =  jerd
+                ======================================== 
+                10
+                
+                内部执行流程：
+                    解析器发现x是一个描述符的话，其实在内部是通过type.__getattribute__()，它能把MyClass.x转换为MyClass.__dict__[“x”].__get__(None,MyClass)来访问。
+                    
+                    描述符作为属性访问是被自动调用的。
+                    对于类属性描述符对象，使用type.__getattribute__，它能把Class.x转换成Class.__dict__[‘x’].__get__(None, Class)。
+                    对于实例属性描述符对象，使用object.__getattribute__，它能把object.x转换为type(object).__dict__[‘x’].__get__(object, type(object))
+                    最好定义描述符对象为类属性
+                    
+        2.# 描述符定义成对象属性
+            class MyClass(object):
+                x = RevealAccess(10, 'jerd')
+                def __init__(self):
+                    print("---MyClass init ----")
+                    self.y = RevealAccess(11, 'zhao')
+        
+            test = MyClass()
+            print(test.y)
+        
+            result:
+                __ revealAccess__ init
+                ---MyClass init ----
+                __ revealAccess__ init
+                <__main__.RevealAccess object at 0x0000000001E97A20>
+                
+                当访问一个实例描述符对象时，object.__getattribute__会将test.y转换为type(test).__dict__[‘y’].__get__(test,type(test))。
+                而MyClass类中没有“y”属性，所以无法访调用到_get__方法，但这个实例对象仍然是一个描述符对象
+        3.# 当定义的类属性描述符对象和实例属性有相同的名字时
+        class MyClass(object):
+            x = RevealAccess(10, 'zhao')
+            def __init__(self, x):
+                print("---MyClass init ----")
+                self.x = x
+
+        test = MyClass(100)
+        print(test.x)
+        
+        result:
+            __ revealAccess__ init
+            ---MyClass init ----
+            __set__...
+            name =  zhao
+            __get__...
+            name =  zhao
+            ======================================== 
+            100
+        
+            test = MyClass(100)
+            print(test.__dict__)
+            print(MyClass.__dict__)
+            
+            当python发现实例对象的字典中有与定义的描述符有相同名字的对象时，描述符优先，会覆盖掉实例属性。python会改写默认的行为，去调用描述符的方法来代替
+            实例对象的字典中根本就没有x对象，即使我们在类中定义了self.x。而类的字典中则有x描述符对象。这主要就是因为描述符优先
+    
+    2.非数据描述符不会覆盖掉实例属性。而且优先级比实例属性低
+        class RevealAccess(object):
+        
+                def __init__(self, initval=None, name='var'):
+                    print('__ revealAccess__ init:',name)
+                    self.val = initval
+                    self.name = name
+            
+            
+                def __get__(self, obj, objtype):
+                    print("__get__...")
+                    print('name = ', self.name)
+                    print('=' * 40, "\n")
+                    return self.val
+
+        
+
+        class MyClass(object):
+            x = RevealAccess(10, 'zhao')
+            def __init__(self, x):
+                print("---MyClass init ----")
+                self.x = x
+        
+        test = MyClass(100)
+        print(test.x)
+        print("------------------------------")
+        print(test.__dict__)
+        print("===============================")
+        print(MyClass.__dict__)
+        print("-------------------++++++++++++")
+        print(MyClass.x)
+        
+        result:
+            __ revealAccess__ init: zhao
+            ---MyClass init ----
+            100
+            ------------------------------
+            {'x': 100}
+            ===============================
+            {'__module__': '__main__', 'x': <__main__.RevealAccess object at 0x00000000028F7438>,....}
+            -------------------++++++++++++
+            __get__...
+            name =  zhao
+            ======================================== 
+            10
+"""
 
 
 
