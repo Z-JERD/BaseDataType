@@ -234,6 +234,31 @@
     print(isinstance(B(), A))               #  True
     print(type(B()) == A)                   #  False
 
+## 获取变量名称
+    var = "foo"
+    现在我们需要得到变量var的名字，即"var"
+    
+    应用场景：
+        name,address,age,gender = "jockfi","北京市", 18,"gentleman"
+        我们希望基于它们创建一个字典person。一般可以这样实现：person = {}
+            person["name"] = name
+            person["address"] = address
+            person["age"] = age
+            person["gender"] = gender
+        不足之处：一是变量的名字出现了重复；二是赋值语句(不管是=赋值还是:赋值)出现了重复。当变量数量越多时，重复情况就越多。
+    
+    
+    import inspect
+    
+    name,address,age,gender = "jockfi","北京市", 18,"gentleman"
+    person = {}
+    
+    def retrieve_name(var):
+        callers_local_vars = inspect.currentframe().f_back.f_locals.items()
+        return [var_name for var_name, var_val in callers_local_vars if var_val is var]
+    
+    for i in [name, address, age, gender]:
+        person[retrieve_name(i)[0]] = i
 
 # 异常处理
 
