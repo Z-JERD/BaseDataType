@@ -1,3 +1,15 @@
+# 类型判断
+    使用isinstance()来类别一个对象是否是可迭代的（Iterable），是否是迭代器（Iterator），是否是生成器（Generator）
+    
+    from collections.abc import Iterable, Iterator, Generator
+    
+    a = "interable"
+    b = iter(a)
+    
+    print(isinstance(a, Iterable))
+    print(isinstance(b, Iterator))
+    print(isinstance(b, Generator))
+
 # 装饰器
 
     闭包:内层函数对外层函数（非全局）变量的引用，该内层函数称为闭包函数
@@ -366,3 +378,170 @@
         1
         2
         3
+        
+        
+ # 生成器补充 
+     之所以引入生成器，是为了实现一个在计算下一个值时不需要浪费空间的结构
+    迭代器，是在可迭代的基础上，加了一个next()方法。
+    而生成器，则是在迭代器的基础上（可以用for循环，可以使用next()），再实现了yield。创建一个生成器，主要有如下两种方法
+    
+
+
+### 定义生成器
+    方法1：推导式生成
+        generator_obj = (x for x in range(5))
+        print(isinstance(generator_obj, Generator))
+    方法2：函数中使用yield
+        def mygenerator(n):
+            now = 0
+            while now < n:
+                yield now
+                now += 1
+    
+    mygen = mygenerator(5)
+    print(isinstance(mygen,Generator))
+    
+### 生成器生命周期
+
+    生成器在其生命周期中，会有如下四个状态:
+        GEN_CREATED # 等待开始执行
+        GEN_RUNNING # 解释器正在执行（只有在多线程应用中才能看到这个状态）
+        GEN_SUSPENDED # 在yield表达式处暂停
+        GEN_CLOSED # 执行结束
+        
+    
+    from inspect import  getgeneratorstate
+    def mygen(n):
+        now = 0
+        while now < n:
+            yield now
+            now += 1
+    
+    if __name__ == '__main__':
+        gen = mygen(2)
+        print(getgeneratorstate(gen))           # GEN_CREATED
+    
+        print(next(gen))
+        print(getgeneratorstate(gen))           #GEN_SUSPENDED
+    
+        print(next(gen))
+        gen.close()  # 手动关闭/结束生成器
+        print(getgeneratorstate(gen))           #GEN_CLOSED
+ 
+ 
+### yield from 作用   
+#### yield from:拼接可迭代对象
+        astr = 'ABC'
+        alist = [1,2,3]
+        adict = {"name":"wangbm","age":18}
+        agen = (i for i in range(4,8))
+        
+        
+        def gen(*args, **kwargs):
+            for item in args:
+                yield from item
+        
+        new_list = gen(astr,alist,adict,agen)
+        print(list(new_list))
+        
+#### yield from :构建双向通道
+        1、调用方：调用委派生成器的客户端（调用方）代码
+        2、委托生成器：包含yield from表达式的生成器函数
+        3、子生成器：yield from后面加的生成器函数
+        
+        # 子生成器
+        def average_gen():
+            total = 0
+            count = 0
+            average = 0
+            while True:
+                new_num = yield average
+                count += 1
+                total += new_num
+                average = total/count
+        
+        # 委托生成器
+        def proxy_gen():
+            while True:
+                yield from average_gen()
+        
+        # 调用方
+        def main():
+            calc_average = proxy_gen()
+            next(calc_average)            # 预激下生成器
+            print(calc_average.send(10))  # 打印：10.0
+            print(calc_average.send(20))  # 打印：15.0
+            print(calc_average.send(30))  # 打印：20.0
+        
+        if __name__ == '__main__':
+            main()
+            
+        委托生成器的作用是：在调用方与子生成器之间建立一个双向通道。
+        调用方可以通过send()直接发送消息给子生成器，而子生成器yield的值，也是直接返回给调用方
+        
+        结束子生成器
+        # 子生成器
+        def average_gen():
+            total = 0
+            count = 0
+            average = 0
+            while True:
+                new_num = yield average
+                if new_num is None:
+                    break
+                count += 1
+                total += new_num
+                average = total/count
+        
+            # 每一次return，都意味着当前协程结束。
+            return total,count,average
+        
+        # 委托生成器
+        def proxy_gen():
+            while True:
+                # 只有子生成器要结束（return）了，yield from左边的变量才会被赋值，后面的代码才会执行。
+                total, count, average = yield from average_gen()
+                print("计算完毕！！\n总共传入 {} 个数值， 总和：{}，平均数：{}".format(count, total, average))
+        
+        # 调用方
+        def main():
+            calc_average = proxy_gen()
+            next(calc_average)            # 预激协程
+            print(calc_average.send(10))  # 打印：10.0
+            print(calc_average.send(20))  # 打印：15.0
+            print(calc_average.send(30))  # 打印：20.0
+            calc_average.send(None)      # 结束协程
+            # 如果此处再调用calc_average.send(10)，由于上一协程已经结束，将重开一协程
+        
+        if __name__ == '__main__':
+            main()
+    
+#### yield from:处理异常
+        # 子生成器
+        def average_gen():
+            total = 0
+            count = 0
+            average = 0
+            while True:
+                new_num = yield average
+                if new_num is None:
+                    break
+                count += 1
+                total += new_num
+                average = total/count
+            return total,count,average
+        
+        def proxy_gen():
+            while True:
+                 yield from average_gen()
+        
+        # 调用方
+        def main():
+            calc_average = proxy_gen()          #自动做了异常处理
+            # calc_average = average_gen()      #抛出异常
+            next(calc_average)            
+            print(calc_average.send(None))
+        
+        
+        if __name__ == '__main__':
+            main()
