@@ -142,7 +142,7 @@
                 return "0" + str(nabs)
             else:
                 return nabs
-    
+    ~~~~
         def get_year_and_month(self,n=0):
             '''
             get the year,month,days from today
@@ -215,3 +215,22 @@
         print('11 days before today is:', time_obj.get_day_of_day(-11))
         print('10 months after today is:', time_obj.get_today_month(10))
         print('5 months before today is:', time_obj.get_today_month(-5))
+
+
+
+
+# 提取文本中的金额
+    import re
+    Regx = re.compile("(([1-9]\\d*[\\d]*\\.?\\d*)|(0\\.[0-9]+))")
+    term = "获取这个数字:12.02,测试金额"
+    i = re.search(Regx,term)
+    if i != None:
+        print(i.group())
+    
+# 提取特定结构中的金额 如提取被@@包含的金额
+    Regx = re.compile("@@(([1-9]\\d*[\\d]*\\.?\\d*)|(0\\.[0-9]+))@@")
+    term = "获取这个数字:@@12@@,测试金额"
+    i = re.search(Regx,term)
+    if i != None:
+        print(i.group())            # @@12.02@@
+        print(i.group(1))           # 12.02
