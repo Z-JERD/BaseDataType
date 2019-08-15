@@ -385,3 +385,29 @@
         # 2.getattr
         age1 = getattr(obj, 'age', 'default')
         print(age, age1)
+# 参数类型校验
+    import inspect
+    import datetime
+
+    def check(fn):
+        def wrapper(*args,**kwargs):
+            sig=inspect.signature(fn)
+            params=sig.parameters
+            values=list(params.values())
+            for i,p in enumerate(args):
+                if not isinstance(p,values[i].annotation):
+                    assert False,'不符合条件的参数错误'
+            for k,v in kwargs.items():
+                if not isinstance(v,params[k].annotation):
+                    assert False,'不符合条件的参数错误'
+            return fn(*args,**kwargs)
+        return wrapper
+    @check
+    def demo(a:int=None,b:bool=None,c:list=None,d:dict=None,e:datetime.datetime=None):
+        print("========a:", a)
+        print("========b:", b)
+        print("========c:", c)
+        print("========d:", d)
+        print("========e:", e)
+
+    demo(a=99,b=False, c=[1,2,3],d={"key":"test"},e=datetime.datetime.now())
