@@ -234,3 +234,26 @@
     if i != None:
         print(i.group())            # @@12.02@@
         print(i.group(1))           # 12.02
+        
+# string
+    import string
+
+    # 列举数字 0 - 9
+    ret = string.digits
+
+    # 列举小写字母
+    ret  = string.ascii_lowercase
+    #  列举大写字母
+    ret = string.ascii_uppercase
+    # 打印所有的大小写字母
+    ret = string.ascii_letters
+
+    # 列举所有标点符号
+    ret = string.punctuation
+
+    # 列举所有空白符
+    ret = string.whitespace
+
+    # 打印十六进制的字符
+    ret = string.hexdigits
+    print(ret)
