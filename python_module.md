@@ -235,6 +235,38 @@
         print(i.group())            # @@12.02@@
         print(i.group(1))           # 12.02
         
+# 校验手机号/座机 身份证号
+    pip install id-validator
+
+    from id_validator import validator
+    id_code = "422825199507064436"
+    # 校验身份证是否合法
+    is_enabled = validator.is_valid(id_code)
+    # 身份证的详细信息
+    code_info = validator.get_info(id_code)
+    # 生成假身份数据
+    temporary_code = validator.fake_id(True, '成都市武侯区', '19950706', 1)
+    # 15位转18位
+    new_code = validator.upgrade_id('610104620927690')
+
+
+    cinema_info = {}
+    if cinema_info.get("phone"):
+        assert re.match("^1[3-9][0-9]{9}$", cinema_info["phone"]) or \
+               re.match("^0[0-9]{2,3}[-| ]{0,2}[0-9]{7,8}$", cinema_info["phone"]) or \
+               re.match("^0[0-9]{2,3}[-| ]{0,2}[0-9]{7,8}[-| ]{1,2}[0-9]{1,5}$",
+                        cinema_info["phone"]), '院线联系电话格式不正确，只能为手机号码或带区号座机号码！'
+
+    if cinema_info.get("fax"):
+        assert re.match("^0[0-9]{2,3}[-| ]{0,2}[0-9]{7,8}$", cinema_info["fax"]), '院线传真不正确，只能为带区号座机号码！'
+
+    if cinema_info.get("email"):
+        assert re.match("^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$", cinema_info["email"]), '院线电子邮箱格式不正确，请重新填写！'
+
+    # 校验硬盘接收编码和联系方式
+    if cinema_info.get("post_code"):
+        assert re.match("^[0-9]{6}$", cinema_info["post_code"]), '邮政编码格式不正确，请重新填写！'
+        
 # string
     import string
 
