@@ -484,6 +484,48 @@
         tuple---> dict
             dic=dict((("a",1),("b",2)))
             print(dic)    #{'a': 1, 'b': 2}
+            
+# for - else
+    1.遍历完for中的内容，就会执行else中的内容
+        for i in [1,2,3,4]:
+            print(i)
+        else:
+            print(i, '我是else')
+    
+    2.如果在 for 和 else 之间有 if ，也不会影响 for 和 else 的关系。
+        else 根本不在乎是否有 if，以及是否执行了满足 if 条件的语句。
+        else 的眼里只有 for，只要 for 顺利执行完毕，else 就会跑一遍
+        for i in [1,2,3,4]:
+            if i > 2:
+                print(i)
+        else:
+            print(i, '我是else')
+    3.只有当 for 循环被 break 语句中断之后，才会跳过 else 
+        for i in [1,2,3,4]:
+            if i>2:
+                print(i)
+                break
+        else:
+            print(i, '我是else')
+            
+    4.应用场景 判断一个数是否为素数
+        1.使用标志位
+            for n in range(2, 10):
+                flag = True
+                for x in range(2, n):
+                    if n % x == 0:
+                        flag = False
+                        break
+                if flag:
+                    print(n, 'is a prime number')
+        
+        2.for -- else
+            for n in range(2, 10):
+                for x in range(2, n):
+                    if n % x == 0:
+                        break
+                else:
+                    print(n, 'is a prime number')
 
 
 
