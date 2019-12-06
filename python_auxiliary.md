@@ -25,15 +25,25 @@
     
     更换镜像安装库：如安装flask
     pip install -i https://pypi.doubanio.com/simple/ flask
-    
-## pip的其他通途
-    查看版本
+
+## 查看版本
+    1. 查看python和pip的版本
         python -V
         pip -V
         
         或者：
           python --version
           pip --version
+          
+    2. 查看第三方包的版本和文件位置
+        import scipy
+        scipy.__version__
+        scipy.__file__
+        
+    3. 查看更多详情
+        pip show scipy 
+   
+## pip的其他通途
           
     1. 搜索
         pip search flask
