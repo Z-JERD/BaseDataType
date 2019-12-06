@@ -259,6 +259,98 @@
     
     for i in [name, address, age, gender]:
         person[retrieve_name(i)[0]] = i
+        
+# 文件处理
+## Python读取文件read() readline() readlines()的区别：
+### 1. read()  一次性读取整个文件内容
+     f = open(filename,'r')
+     f.read()
+
+    read(参数)：
+        通过参数指定每次读取的大小长度,这样就避免了因为文件太大读取出问题
+
+    一般小文件我们都采用read()，不确定大小就定个size
+
+### 2.readline() 
+    每次读取一行内容。内存不够时使用，一般不太用
+
+### 3.readlines()  
+    一次性读取整个文件内容，并按行返回到list
+    如果文件太大 会造成MemoyError
+    适合读取配置文件
+
+### 4.with open
+    with open(file_path, 'rb') as f:
+        sha1Obj.update(f.read())
+
+    with open(file_path, 'rb') as f:
+        for line in f.readlines():
+            print(line)
+
+    在读取小文件时确实不会产生什么异常，但是一旦读取大文件，很容易会产生MemoryError
+
+    with open(file_path, 'rb') as f:  采用每次读取一行的方式
+        for line in f:
+            print(line)
+
+## 读取大文件：
+### 1.分块读取：将大文件分割成若干小文件处理，处理完每个小文件后释放该部分内存。用iter 和 yield来实现
+        def read_in_chunks(filePath, chunk_size=1024*1024):
+            file_object = open(filePath)
+            while True:
+                chunk_data = file_object.read(chunk_size)
+                if not chunk_data:
+                    break
+                yield chunk_data
+
+        if __name__ == "__main__":
+            filePath = './path/filename'
+            for chunk in read_in_chunks(filePath):
+                pass
+
+### 2.With open()
+        with语句打开和关闭文件，包括抛出一个内部块异常。for line in f文件对象f视为一个迭代器，会自动的采用缓冲IO和内存管理
+            with open(file_path, 'r') as f:
+                while True:
+                    buf = f.read(1024)
+                    if buf:
+                        sha1Obj.update(buf)
+                    else:
+                        break
+
+        with open()的优化：
+            面对百万行的大型数据使用with open 是没有问题的，但是这里面参数的不同也会导致不同的效率。
+            参数为”rb”时的效率是”r”的6倍。由此可知二进制读取依然是最快的模式。
+            
+# python内存监控工具
+## 1. memory_profiler:按每行代码查看内存占用
+        pip install -U memory_profiler
+
+        from memory_profiler import profile
+        @profile
+        def my_func():
+            a = [1] * (10 ** 3)
+            b = [2] * (2 * 10 ** 2)
+            del b
+            return a
+
+        if __name__ == '__main__':
+            my_func()
+
+## 2.guppy查看占用内存前十位变量
+        直接打印出对应各种python类型（list、tuple、dict等）分别创建了多少对象，占用了多少内存
+        pip install guppy
+
+        from guppy import hpy
+        mem = hpy()
+        with open(file_path, 'r') as f:
+                while True:
+                    buf = f.read(1024)
+                    if buf:
+                        print(mem.heap())
+                        sha1Obj.update(buf)
+                    else:
+                        break
 
 # 异常处理
 
