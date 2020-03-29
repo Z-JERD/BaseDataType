@@ -12,22 +12,38 @@ api = Api(application)
 class JrWsgiServer():
 
     def http_badrequest(self,resp):
+
         return jsonify({"status": 400, "error": resp})
 
-    def http_exception(self, e):
+    def http_exception(self, e, status_code=400):
 
         import traceback
         traceback.print_exc()
 
-        if isinstance(e, TypeError) :
-            return jsonify({"status": 400, "error": '不符合要求的参数错误'})
+        if isinstance(e, TypeError):
 
-        if isinstance(e, AssertionError):
-            return jsonify({"status": 400, "error": e.args[0]})
+            reslut = {"status": status_code, "result": '不符合要求的参数错误'}
 
-        return jsonify({"status": 500, "error": "Internal Server Error"})
+            # 响应头中状态码依然为200
+            # return jsonify({"status": 400, "error": '不符合要求的参数错误'})
 
-    def http_ok(self, resp):
+        elif isinstance(e, AssertionError):
+            reslut = {"status": status_code, "result": e.args[0]}
+
+            # 响应头中状态码依然为200
+            # return jsonify({"status": 400, "error": e.args[0]})
+
+        else:
+            status_code = 500
+            reslut = {"status": status_code, "result": "Internal Server Error"}
+
+        response = make_response(json.dumps(reslut, ensure_ascii=False), status_code)
+        response.headers["Content-Type"] = 'text/html; charset=utf-8'
+
+        return response
+        # return jsonify({"status": 500, "error": "Internal Server Error"})
+
+    def http_ok(self, resp, status_code=200):
         """
             使用jsonify时响应的Content-Type字段值为application/json，而使用json.dumps时该字段值为text/html。
             Content-Type决定了接收数据的一方如何看待数据，如何处理数据，如果是application/json，则可以直接当做json对象处理，
@@ -41,8 +57,10 @@ class JrWsgiServer():
 
 
         # 3.自定义响应头为text/html 前端需要反向解析
-        response = make_response(json.dumps({"status":200,"result":resp},ensure_ascii=False))
+        result = {"status": 200, "result": resp}
+        response = make_response(json.dumps(result, ensure_ascii=False), status_code)
         response.headers["Content-Type"] = 'text/html; charset=utf-8'
+
         return response
 
 class TaskListAPI(Resource,JrWsgiServer):
